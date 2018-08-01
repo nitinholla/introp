@@ -1,0 +1,7 @@
+{  
+    "www_path":"C:/GRL-nitin/ocf-interop/240718/introp-UI/InteropBoardOcf-InteropBoardWorkingBranch/html",
+    "iotivity_node_unsecured_path":"C:/GRL-nitin/iotivity-build-working-before-grunt/iotivity-node-unsecured",
+    "iotivity_node_secured_path":"C:/GRL-nitin/iotivity-build-working-before-grunt/iotivity-node-unsecured",
+    "isSecuredMode":false,
+    "BLEMac": "84:68:3E:07:99:6A"
+}

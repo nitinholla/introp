@@ -1,0 +1,191 @@
+{
+    "ac":{
+        "name":"Air Conditioner",
+        "icon":"icon-ac",
+        "card_size":"m"
+    },
+    "activeSpeaker":{
+        "name":"Active Speaker",
+        "icon":"icon-active-speaker",
+        "card_size":"m"
+    },
+    "airPurifier":{
+        "name":"Air Purifier",
+        "icon":"icon-air-purifier",
+        "card_size":"m"
+    },
+    "light":{
+        "name":"Light",
+        "icon":"icon-light"
+    },
+    "fan":{
+        "name":"Fan",
+        "icon":"icon-fan"
+    },
+    "stb":{
+        "name":"Set Top Box",
+        "icon":"icon-stb"
+    },
+    "battery":{
+        "name":"Battery",
+        "icon":"icon-battery"
+    },
+
+    "audio-system":{
+        "name":"Audio System",
+        "icon":"icon-audio-system"
+    },
+    "bell":{
+        "name":"Door Bell",
+        "icon":"icon-bell"
+    },
+    "blind":{
+        "name":"Blind",
+        "icon":"icon-blind"
+    },
+    "camera":{
+        "name":"Camera",
+        "icon":"icon-camera"
+    },
+    "charging":{
+        "name":"Electric Vehicle Charger",
+        "icon":"icon-charging"
+    },
+    "clothes-washer-dryer":{
+        "name":"Clothes Washer Dryer",
+        "icon":"icon-clothes-washer-dryer"
+    },
+    "coffee-machine":{
+        "name":"Coffee Machine",
+        "icon":"icon-coffee-machine"
+    },
+    "cooker-hood":{
+        "name":"Cooker Hood",
+        "icon":"icon-cooker-hood"
+    },
+    "cook-top":{
+        "name":"Cook Top",
+        "icon":"icon-cook-top"
+    },
+    "curtains":{
+        "name":"Curtains",
+        "icon":"icon-curtains"
+    },
+    "dehumidifier":{
+        "name":"Dehumidifier",
+        "icon":"icon-dehumidifier"
+    },
+    "dishwasher":{
+        "name":"Dishwasher",
+        "icon":"icon-dishwasher"
+    },
+    "door":{
+        "name":"Door",
+        "icon":"icon-door"
+    },
+    "dryer":{
+        "name":"Dryer",
+        "icon":"icon-dryer"
+    },
+    "electric-meter":{
+        "name":"Electric Meter",
+        "icon":"icon-electric-meter"
+    },
+    "energy-generator":{
+        "name":"Energy Generator",
+        "icon":"icon-energy-generator"
+    },
+    "food-probe":{
+        "name":"Food Probe",
+        "icon":"icon-food-probe"
+    },
+    "freezer":{
+        "name":"Freezer",
+        "icon":"icon-freezer"
+    },
+    "grinder":{
+        "name":"Grinder",
+        "icon":"icon-grinder"
+    },
+    "humidifier":{
+        "name":"Humidifier",
+        "icon":"icon-humidifier"
+    },
+    "monitoring":{
+        "name":"Air Quality Moniter",
+        "icon":"icon-monitoring"
+    },
+    "oven":{
+        "name":"Oven",
+        "icon":"icon-oven"
+    },
+    "powerbackup":{
+        "name":"Powerbackup",
+        "icon":"icon-powerbackup"
+    },
+    "printer":{
+        "name":"Printer",
+        "icon":"icon-printer"
+    },
+    "printer-multifunction":{
+        "name":"Printer Multifunction",
+        "icon":"icon-printer-multifunction"
+    },
+    "receiver":{
+        "name":"Receiver",
+        "icon":"icon-receiver"
+    },
+    "refrigerator":{
+        "name":"Refrigerator",
+        "icon":"icon-refrigerator"
+    },
+    "robot-vacuum-cleaner":{
+        "name":"Roomba",
+        "icon":"icon-robot-vacuum-cleaner"
+    },
+    "scanner":{
+        "name":"Scanner",
+        "icon":"icon-scanner"
+    },
+    "security-panel":{
+        "name":"Security Panel",
+        "icon":"icon-security-panel"
+    },
+    "sensor":{
+        "name":"Sensor",
+        "icon":"icon-sensor"
+    },
+    "smart-lock":{
+        "name":"Smart Lock",
+        "icon":"icon-smart-lock"
+    },
+    "smart-plug":{
+        "name":"Smart Plug",
+        "icon":"icon-smart-plug"
+    },
+    "television":{
+        "name":"Television",
+        "icon":"icon-television"
+    },
+    "switch":{
+        "name":"Switch",
+        "icon":"icon-switch"
+    },
+    "valve":{
+        "name":"Valve",
+        "icon":"icon-valve"
+    },
+    "washer-machine":{
+        "name":"Washer (Laundry)",
+        "icon":"icon-washer-machine"
+    },
+    "water-heater":{
+        "name":"Water Heater",
+        "icon":"icon-water-heater"
+    },
+    "window":{
+        "name":"Window",
+        "icon":"icon-window"
+    }
+    
+}

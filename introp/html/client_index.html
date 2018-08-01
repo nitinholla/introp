@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Client Mode -Interop Board</title>
+	<!-- Google font -->
+	<!--link href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7CVarela+Round" rel="stylesheet"-->
+	<!-- Bootstrap -->
+	<link type="text/css" rel="stylesheet" href="css/bootstrap.min.css" />
+	<!-- Font Awesome Icon -->
+	<link rel="stylesheet" href="css/font-awesome.min.css">
+	<!-- Custom stlylesheet -->
+	<link rel="stylesheet" href="css/rangeslider.css">
+	<link type="text/css" rel="stylesheet" href="css/style.css" />
+	<link type="text/css" rel="stylesheet" href="css/cards.css" />
+	<script type="text/javascript" src="js/iscroll.js"></script>
+	<script>
+		document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);		
+	</script>
+
+</head>
+
+<body>
+	<!-- Header -->
+	<header>
+		<!-- Nav -->
+		<nav id="nav" class="navbar nav-transparent">
+			<div class="container-fluid pr-0">
+				<div class="col-md-6">
+					<!-- Logo -->
+					<img class="hamburger" src="img/hamburger.png">
+					<a href="index.html">
+						<img class="logo-alt" src="img/logo.png" width="180" alt="logo">
+					</a>
+					<!-- /Logo -->
+				</div>
+
+				<div class="pull-right">
+					<div class="wifi">
+						<ul>
+							<li>
+									<a href="#" data-placement="bottom" data-toggle="popover" title="Ethernet" id="ethernet-icon" class="nw-icons">
+										<img src="img/cable.png" width="20" >
+									</a>
+								</li>
+								<li>
+									<a href="#" data-placement="bottom" data-toggle="popover" title="Bluetooth" id="bt-icon" class="nw-icons">
+										<i class="fa fa-bluetooth-b"></i>
+									</a>
+								</li>
+								<li>
+									<a href="#" data-placement="bottom" data-toggle="popover" title="WiFi" id="wifi-icon" class="nw-icons">
+										<i class="fa fa-wifi"></i>
+									</a>
+								</li>
+								<li style="position: relative;">
+									<a href="#">
+										<i class="fa fa-bell"></i>
+									</a>
+								</li>
+								<li class="trun">
+									<a href="#">
+										<img src="img/light.png" width="30">Turn Off All Devices</a>
+								</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</nav>
+		<!-- /Nav -->
+	</header>
+	<!-- /Header -->
+
+	<!-- Welcome -->
+	<section class="welcome">
+		<div class="container tab-width">
+			<div class="row mb-2">
+				<div class="col-md-6">
+					<h1>Welcome
+						<b>Tester</b>
+					</h1>
+					<span class="day" id="date">Today, </span>
+					<!--span class="day"><img src="img/mob.png" width="16px"> 91 9176 234 789</span-->
+				</div>
+				<div class="col-md-5 pull-right pr-0">
+					<select disabled id="select-device" style="width:203px">
+							<option selected style="display: none;color: black">---No Clients Found---</option>
+							<option ></option>
+					</select>
+					<button class="btn btn-white pull-right" id="search-clients" style="padding: 4px 29px; margin-right: 5%;"> Search Clients </button>
+				</div>
+			</div>
+			<div class="clear"></div>
+			<div id="scroller">
+				<div id="grid-container" >
+						<h1 style="width: 800px;margin-top: auto;margin-left: 200px;color: #f6f6f6cc;font-style: italic;">No Clients Selected, Click on "Search Clients" and select clients from list</h1>
+	
+				</div>
+			</div>
+		</div>
+	
+	
+	</section>
+	<!-- Welcome -->
+
+
+
+	<div class="modal fade" id="control-modal">
+	
+		<div class="modal-dialog" style="width: 600px;">
+			<div class="modal-content">
+	
+				<!-- Modal body -->
+				<div class="modal-body device-tab" style="padding: 0">
+					<main>
+						<div id="labelScroller">
+							<div id="dev-tabs">
+							</div>
+						</div>
+						<div id="dev-components">
+						</div>
+					</main>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+	
+	</div>
+
+
+
+
+	<footer>
+		<div class="col-md-2 home">
+			<img src="img/home.png" class="img-responsive">
+		</div>
+		<div class="col-md-8 text-center">
+			<p>Copyrights Reserved 2018 Granite River Labs | Powered by Open Connectivity Foundation</p>
+		</div>
+		<div class="col-md-2 connectivity">
+			<img src="img/connectivity.png" class="img-responsive">
+		</div>
+	</footer>
+
+
+	<!-- Preloader -->
+	<div id="preloader">
+			<div class="preloader">
+				<span></span>
+				<span></span>
+				<span></span>
+				<span></span>
+			</div>
+			<h5 id="loaderInfoText">Loading.. </h5>
+		</div>
+	<!-- /Preloader -->
+
+</body>
+<!-- jQuery Plugins -->
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<!--link rel="stylesheet" href="css/bootstrap.css"-->
+<script type="text/javascript" src="js/client-main.js"></script>
+
+<script src="js/rangeslider.min.js"></script>
+<script type="text/javascript" src="js/jquery.actual.min.js"></script>
+
+
+</html>

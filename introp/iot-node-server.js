@@ -1,0 +1,663 @@
+//OCF Requirement
+var intervalId;
+var childProcessContainer = {}
+var isSecuredMode = false;
+var SerialPort = require('serialport');
+var spawn = require('child_process').spawn;
+var fs = require('fs');
+var util = require('util');
+var os = require('os');
+var http = require('http');
+var ajaxRequest = require('request');
+var url = require('url');
+
+//Paths from Json
+var configJson = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+var unsecured_path = configJson.iotivity_node_unsecured_path;
+var secured_path = configJson.iotivity_node_secured_path;
+isSecuredMode = configJson.isSecuredMode;
+var BLEMac = configJson.BLEMac
+var thisOs = os.release();
+///////
+
+var ttyPort = new SerialPort('/dev/ttyACM0', {
+  baudRate: 57600
+});
+if (isSecuredMode) {
+  iotivity = require(secured_path + "/lowlevel");
+  StorageHandler = require(secured_path + "/lib/StorageHandler_GRL")('cli','jw','')
+  iotivity.OCRegisterPersistentStorageHandler(StorageHandler);
+  console.log("Secured Mode");
+}
+else {
+  iotivity = require(unsecured_path + "/lowlevel");
+  console.log("Unsecured Mode");
+}
+
+clientHandleReceptacle = {}
+
+console.log("Starting Interop Board Program");
+var PythonShell = require('python-shell');
+powerOffAllGpios()
+//var PyOptions = {
+//  scriptPath: '/home/grl/Desktop/Karthick/'
+//};
+
+iotivity.OCInit(null, 0, iotivity.OCMode.OC_CLIENT_SERVER);
+
+
+intervalId = setInterval(function () {
+  var processResult = iotivity.OCProcess();
+}, 100);
+
+var clientOptions = (function () {
+  var index,
+    returnValue = {
+
+      // By default we discover resources
+      //discoveryUri: iotivity.OC_MULTICAST_DISCOVERY_URI
+      discoveryUri: iotivity.OC_RSRVD_DEVICE_URI
+
+    };
+
+  for (index in process.argv) {
+    if (process.argv[index] === "-d" || process.argv[index] === "--device") {
+      returnValue.discoveryUri = iotivity.OC_RSRVD_DEVICE_URI;
+    } else if (process.argv[index] === "-p" || process.argv[index] === "-platform") {
+      returnValue.discoveryUri = iotivity.OC_RSRVD_PLATFORM_URI;
+    }
+  }
+
+  return returnValue;
+})();
+
+
+//Request Handler
+
+var qs = require('querystring');
+var serverPort = 8081;
+var restServer = http.createServer(function (httpRequest, httpResponse) {
+  /****************GET************************** */
+  if (httpRequest.method === "GET") {
+    var requestBody = '';
+    var queryData = '';
+    var urlData = '';
+    urlData = url.parse(httpRequest.url, true);
+    queryData = urlData.query;
+
+    httpRequest.on('data', function (data) {
+      requestBody += data;
+    });
+    httpRequest.on('end', function () {
+      console.log(urlData.pathname);
+      httpResponse.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Headers': 'x-requested-with',
+        'access-control-allow-origin': '*'
+      });
+      if (urlData.pathname === "/favicon.ico") {
+        httpResponse.writeHead(404, {
+          'Content-Type': 'text/html'
+        });
+        httpResponse.write('<!doctype html><html><head><title>404</title></head><body>404: Resource Not Found</body></html>');
+        httpResponse.end();
+      }
+      else if (urlData.pathname === "/CreateDevice") {
+		console.log("inside createdevice");
+        //console.log(queryData);
+        if ("d" in queryData) {
+          if (Array.isArray(queryData.d)) {
+            queryData.d.forEach(function (eachElem) {
+              createOcfRes(eachElem);
+            })
+          }
+          else {
+            createOcfRes(queryData.d);
+          }
+
+          httpResponse.end(JSON.stringify({
+            'Status': 'Success',
+            'Message': "Device Created Successfully",
+            'Req': queryData
+          }));
+        }
+        else {
+          httpResponse.end(JSON.stringify({
+            'Status': 'Fail',
+            'Message': "Query d is not specified",
+            'Req': queryData
+          }));
+        }
+      }
+      else if (urlData.pathname === "/Discover") {
+		console.log("inside Discover");
+       // console.log(queryData);
+        if ("type" in queryData) {
+          if ((queryData.type == 'd') || (queryData.type == 'res')) {
+            var discoveryUri = queryData.type == 'd' ? iotivity.OC_RSRVD_DEVICE_URI : iotivity.OC_MULTICAST_DISCOVERY_URI;
+            httpResponse.write("[");
+            iotivity.OCDoResource(clientHandleReceptacle, iotivity.OCMethod.OC_REST_DISCOVER,
+              discoveryUri,
+              null,
+              null,
+              iotivity.OCConnectivityType.CT_DEFAULT,
+              iotivity.OCQualityOfService.OC_HIGH_QOS,
+              function (handle, callResponse) {
+                console.log("Discovery response: " + JSON.stringify(callResponse, null, 4));
+                console.log("Discovery response from: " + JSON.stringify(callResponse.addr.addr, null, 4));
+                httpResponse.write(JSON.stringify(callResponse, null, 4));
+                httpResponse.write(",");
+                return iotivity.OCStackApplicationResult.OC_STACK_KEEP_TRANSACTION;
+              },
+              null);
+            setTimeout(function () {
+              httpResponse.end("{}]");
+            }, 3000);
+          }
+          else {
+            httpResponse.end(JSON.stringify({
+              'Status': 'Fail',
+              'Message': "Query parameter for 'type' should be 'd' or 'res'",
+              'Req': queryData
+            }));
+          }
+        }
+        else {
+          httpResponse.end(JSON.stringify({
+            'Status': 'Fail',
+            'Message': "Query 'type' is not specified",
+            'Req': queryData
+          }));
+        }
+      }
+
+      else {
+        console.log(queryData);
+        httpResponse.writeHead(200, {
+          'Content-Type': 'text/html'
+        });
+        httpResponse.end("<h1>Node Server is running</h1>");
+      }
+    });
+  }
+
+  /**************POST*************************** */
+  else if (httpRequest.method === "POST") {
+    var requestBody = '';
+    var queryData = '';
+    httpRequest.on('data', function (data) {
+      requestBody += data;
+      queryData = qs.parse(requestBody);
+    });
+    httpRequest.on('end', function () {
+      //console.log(queryData);
+      httpResponse.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Headers': 'x-requested-with',
+        'access-control-allow-origin': '*'
+      });
+      if (httpRequest.url === "/CreateResource") {
+	console.log("inside createResource post");
+        createOcfRes(queryData.deviceType);
+        httpResponse.end(JSON.stringify({
+          'data': 'created'
+        }));
+      }
+      else if (httpRequest.url === "/DeleteResource") {
+        console.log("______Deleting..... " + queryData.deviceType + "________");
+        childProcessContainer[queryData.deviceType].kill('SIGINT');
+        delete childProcessContainer[queryData.deviceType];
+        //if (queryData.deviceType === 'light2') {
+        //  var pyshell = new PythonShell('ledoff.py', PyOptions);
+        //  pyshell.on('message', function (message) {
+        //    console.log(message);
+        //  });
+        //}
+
+        httpResponse.end(JSON.stringify({
+          'data': 'Deleted'
+        }));
+      }
+      else if (httpRequest.url === "/DiscoverResource") {
+	console.log("inside discoverResource Post");
+        httpResponse.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Headers': 'x-requested-with',
+          'access-control-allow-origin': '*'
+        });
+        var discoveryUri = iotivity.OC_MULTICAST_DISCOVERY_URI;
+        var destinationAddr = null;
+        var resWaitTime = 1000;
+        if (queryData.addressType === "d_m") {// Multicast
+          //discoveryUri = "224.0.1.187:5683" + iotivity.OC_RSRVD_DEVICE_URI;
+          discoveryUri = iotivity.OC_RSRVD_DEVICE_URI;
+          resWaitTime = 6000;
+        }
+        else if (queryData.addressType === "d_u") {//Unicast
+          discoveryUri = iotivity.OC_RSRVD_DEVICE_URI;
+          resWaitTime = 2000;
+        }
+        else if (queryData.addressType === "r") {
+          discoveryUri = iotivity.OC_MULTICAST_DISCOVERY_URI;
+          destinationAddr = JSON.parse(queryData.destinationAddr);
+          resWaitTime = 1000;
+        }
+        else {
+          discoveryUri = "224.0.1.187:5683" + iotivity.OC_MULTICAST_DISCOVERY_URI;
+          resWaitTime = 6000;
+        }
+        console.log("Issuing discovery request");
+        httpResponse.write("[");
+        // Discover resources and list them
+        iotivity.OCDoResource(
+
+          // The bindings fill in this object
+          clientHandleReceptacle,
+
+          iotivity.OCMethod.OC_REST_DISCOVER,
+
+          // Standard path for discovering devices/resources
+          discoveryUri,
+
+          // There is no destination
+          destinationAddr,
+
+          // There is no payload
+          null,
+          iotivity.OCConnectivityType.CT_DEFAULT,
+          iotivity.OCQualityOfService.OC_HIGH_QOS,
+          function (handle, callResponse) {
+           // console.log("Discovery response: " + JSON.stringify(callResponse, null, 4));
+         //   console.log("Discovery response from: " + JSON.stringify(callResponse.addr.addr, null, 4));
+            var deviceUri = ""
+
+            httpResponse.write(JSON.stringify(callResponse, null, 4));
+            httpResponse.write(",");
+            //return iotivity.OCEntityHandlerResult.OC_EH_OK;
+            return iotivity.OCStackApplicationResult.OC_STACK_KEEP_TRANSACTION;
+
+          },
+
+          // There are no header options
+          null);
+        setTimeout(function () {
+          httpResponse.end("{}]");
+          iotivity.OCStop();
+          iotivity.OCInit(null, 0, iotivity.OCMode.OC_CLIENT_SERVER);
+        }, resWaitTime);
+        //response.end(JSON.stringify({
+        //  'data': 'discovered'
+        //}));
+
+      }
+	  
+      else if (httpRequest.url === "/shutdown") {
+		console.log("inside shutdown");  
+	      var exec = require('child_process').exec;
+        exec('shutdown now');
+      }
+      else if (httpRequest.url === "/Putdata") {
+		console.log("inside putdata");
+        addr = JSON.parse(queryData.devAddr);
+        uri = queryData.uri;
+        values = JSON.parse(queryData.updatedValues);
+        doPutRequest(addr, uri, values, httpResponse);
+
+      }
+      else if (httpRequest.url === "/Getdata") {
+		console.log("httprequest"+httpRequest.url);
+		console.log(queryData);
+		console.log("inside getdata");
+        console.log("devAddr----------"+queryData.devAddr);
+        var addr = JSON.parse(queryData.devAddr);
+        if (isSecuredMode) {
+          addr = null;
+        }
+        uri = queryData.uri;
+        console.log(uri);
+        doGetRequest(addr, uri, httpResponse);
+      }
+      else if (httpRequest.url === "/getNetworkDetails") {
+console.log("inside getNetworkDetails");
+        nwData = getNetworkDetails();
+        setTimeout(function () {
+          httpResponse.end(JSON.stringify(nwData, null, 4));
+        }, 500);
+      }
+      else if (httpRequest.url === "/setGpio") {
+console.log("inside setGpio");
+        portNo = queryData.portNo;
+        val = queryData.gval;
+        CmdGPIO(portNo, val)
+        httpResponse.end(JSON.stringify("GPIO Cmd Sent", null, 4));
+      }
+      else {
+        httpResponse.writeHead(404, 'Resource Not Found', {
+          'Content-Type': 'text/html'
+        });
+        httpResponse.end('<!doctype html><html><head><title>404</title></head><body>404: Resource Not Found</body></html>');
+      }
+    });
+    httpRequest.on('error', function (e) {
+      console.log("Handled Error: httpRequest:");
+      console.log(e);
+    });
+    httpResponse.on('error', function (e) {
+      console.log("Handled Error: httpResponse:");
+      console.log(e);
+    });
+  }
+  else {
+    httpResponse.writeHead(405, 'Method Not Supported', {
+      'Content-Type': 'text/html'
+    });
+    return httpResponse.end('<!doctype html><html><head><title>405</title></head><body>405: Method Not Supported</body></html>');
+  }
+}).listen(serverPort);
+console.log('Server running at localhost:' + serverPort);
+
+restServer.on('error', function (e) {
+  // Handle your error here
+  //console.log("Handled Error: restServer: ", e);
+});
+
+
+
+
+function createOcfRes(deviceType) {
+	console.log("inside createOcfRes");
+  var dev_count = 0;
+  console.log("Registering_____ " + deviceType);
+  if (!(deviceType in childProcessContainer)) {
+    childProcessContainer[deviceType] = [];
+  }
+  //else{
+    //dev_count = childProcessContainer[deviceType].length;
+  //}
+  childProcessContainer[deviceType].push(spawn('node', ['ocf-create-device.js', deviceType, dev_count]));
+}
+
+var devPayload = null;
+function doGetRequest(destination, resName, httpRespHandler) {
+	console.log(" Inside doGetRequest");
+	console.log(destination);
+	console.log(resName);
+	//console.log(httpRespHandler);
+  httpRespHandler.writeHead(200, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Headers': 'x-requested-with',
+    'access-control-allow-origin': '*'
+  });
+  console.log("Do GET Request...");
+  var getResult,
+    getHandleReceptacle = {},
+
+
+    getResult = iotivity.OCDoResource(
+      getHandleReceptacle,
+      iotivity.OCMethod.OC_REST_GET,
+      resName,
+      destination,
+      {
+        type: iotivity.OCPayloadType.PAYLOAD_TYPE_REPRESENTATION,
+        values: {
+          get: "all"
+        }
+      },
+      iotivity.OCConnectivityType.CT_DEFAULT,
+      iotivity.OCQualityOfService.OC_HIGH_QOS,
+      function (handle, response) {
+        var returnValue = iotivity.OCStackApplicationResult.OC_STACK_KEEP_TRANSACTION;
+		console.log("response out");
+		console.log(response);
+        if (response &&
+          response.payload &&
+          response.payload.type === iotivity.OCPayloadType.PAYLOAD_TYPE_REPRESENTATION &&
+          response.payload.values) {
+			  console.log("response payload");
+          console.log(response.payload.values);
+
+          httpRespHandler.end(JSON.stringify(response));
+
+          returnValue = iotivity.OCStackApplicationResult.OC_STACK_DELETE_TRANSACTION;
+          devPayload = response.payload.values;
+		  console.log("before cleanup");
+          //cleanup();
+        } else {
+          console.log("Not a valid response for get req: " + destination + "-->" + resName + " " + console.log(response))
+        }
+
+        return returnValue;
+      },
+      null);
+  console.log("getResult-->"+ getResult);
+
+  return devPayload;
+}
+
+function doPutRequest(destination, resName, newValues, httpRespHandler) {
+  console.log("inside doputRequest");
+
+  var putResult,
+    getHandleReceptacle = {};
+
+  putResult = iotivity.OCDoResource(
+    getHandleReceptacle,
+    iotivity.OCMethod.OC_REST_PUT,
+    resName,
+    destination,
+    {
+      type: iotivity.OCPayloadType.PAYLOAD_TYPE_REPRESENTATION,
+      values: newValues
+    },
+    iotivity.OCConnectivityType.CT_DEFAULT,
+    iotivity.OCQualityOfService.OC_HIGH_QOS,
+    function (handle, response) {
+      var returnValue = iotivity.OCStackApplicationResult.OC_STACK_KEEP_TRANSACTION;
+
+      if (response) {
+        //console.log("PUT Response" + response);
+
+        returnValue = iotivity.OCStackApplicationResult.OC_STACK_DELETE_TRANSACTION;
+        httpRespHandler.end(JSON.stringify(response));
+      } else {
+        throw new Error("Client: Unexpected GET response: " + JSON.stringify(response, null, 4));
+        httpRespHandler.end(JSON.stringify(response));
+      }
+
+      return returnValue;
+    },
+    null);
+}
+
+function getNetworkDetails() {
+console.log("inside getNeworldetails");
+  const { exec } = require('child_process');
+  var strIfconfig;
+  var strHciconfig;
+  var addrJson = {
+    "ethernet": {
+      'HWaddr': "Not Found",
+      'IP': "No Connection"
+    },
+    "wifi": {
+      'HWaddr': "Not Found",
+      'IP': "No Connection"
+    },
+    "bluetooth": {
+      'HWaddr': "Not Found"
+    },
+
+  }
+  exec('ifconfig', (err, ifstdout, stderr) => {
+    if (err) {
+      //console.log(`stderr: ${stderr}`);
+      return addrJson;
+    }
+    //console.log(`stdout: ${ifstdout}`);
+    strIfconfig = ifstdout
+    //console.log(`stderr: ${stderr}`);
+    exec('hciconfig', (err, hcistdout, stderr) => {
+      if (err) {
+        return addrJson;
+      }
+      //console.log(`stdout: ${hcistdout}`);
+      strHciconfig = hcistdout;
+      //console.log(`stderr: ${stderr}`);
+      strSplitIf = strIfconfig.split("\n");
+      strSplitIf.forEach(function (line, index, arr) {
+      if (line.startsWith("enp2") || line.startsWith("eth")) {
+          //Ubuntu
+          var hwAddr = line.trim().split(' ').pop()
+          addrJson.ethernet.HWaddr = hwAddr
+          //On Android the HWaddr comes with ether
+	      if (strSplitIf[index + 3].trim().startsWith('ether')) {
+            addrJson.ethernet.HWaddr = strSplitIf[index + 3].trim().split(' ')[1];
+          }
+          //Ubuntu
+          if (strSplitIf[index + 1].trim().startsWith('inet addr')) {
+            var ip = strSplitIf[index + 1].trim().split(' ')[1].split(':')[1];
+            addrJson.ethernet.IP = ip;
+          }
+          //Android
+	      else if (strSplitIf[index + 1].trim().startsWith('inet')) {
+            var ip = strSplitIf[index + 1].trim().split(' ')[1];
+            addrJson.ethernet.IP = ip;
+          }
+          else {
+            addrJson.ethernet.IP = "Not Connected";
+          }
+        }
+
+      if (line.startsWith("wlp") || line.startsWith("wlan")) {
+          //Ubuntu
+          var hwAddr = line.trim().split(' ').pop()
+          addrJson.wifi.HWaddr = hwAddr
+          //On Android the HWaddr comes with ether
+	      if (strSplitIf[index + 3].trim().startsWith('ether')) {
+            addrJson.wifi.HWaddr = strSplitIf[index + 3].trim().split(' ')[1];
+          }
+          //Ubuntu
+          if (strSplitIf[index + 1].trim().startsWith('inet addr')) {
+            var ip = strSplitIf[index + 1].trim().split(' ')[1].split(':')[1];
+            addrJson.wifi.IP = ip;
+          }
+          //Android
+	      else if (strSplitIf[index + 1].trim().startsWith('inet')) {
+            var ip = strSplitIf[index + 1].trim().split(' ')[1];
+            addrJson.wifi.IP = ip;
+          }
+          else {
+            addrJson.wifi.IP = "Not Connected";
+          }
+        }
+      });
+
+      strSplitHci = strHciconfig.split("\n");
+      strSplitHci.forEach(function (line, index, arr) {
+        if (line.startsWith("hci")) {
+         addrJson.bluetooth.HWaddr = strSplitHci[index + 1].trim().split(" ")[2]
+        }
+      });
+      //console.log(addrJson);      
+    });
+  });
+  return addrJson;
+}
+
+function CmdGPIO(portno, value) {
+//console.log("inside CmdGPIO");
+  //18,19,21
+  if (portno === undefined || value === undefined) { return; }
+  var finVal = ('0' + portno.toString()).slice(-2) + ('0' + value.toString()).slice(-2);
+  if (thisOs.indexOf("android") + 1) { //Check if platform is android, send command via ble
+    ajaxRequest({
+      url: "http://127.0.0.1:8082",
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      json: true,
+      body: JSON.stringify({ cmd: "serialCmd", mac: BLEMac, "serCmd": finVal }),
+    }, function (error, response, body) {
+      console.log("BLE cmd " + finVal);
+      console.log(body);
+    });
+  }
+  else { // For Linux and windows, send command via tty
+    ttyPort.write(finVal, function (err) {
+      if (err) {
+        return console.log('Error on write: ', err.message);
+      }
+      console.log('Success ' + finVal);
+    });
+  }
+  //port.close();
+  return;
+
+}
+
+function powerOffAllGpios() {
+  //
+console.log("inside poweroffallgpios");
+  console.log("Power off all GPIOs")
+  CmdGPIO(17, '01');
+  CmdGPIO(18, '01');
+  CmdGPIO(19, '01');
+  CmdGPIO(20, '01');
+  CmdGPIO(21, '01');
+  CmdGPIO(22, '01');
+
+  var gpioStart = 1;
+  for (var i = gpioStart; i < 17; i++) {
+    CmdGPIO(i, '00');
+  }
+}
+
+function powerOnAllGpios() {
+  //
+console.log("inside poweronallGpios");
+  console.log("Power on All GPIOs")
+  CmdGPIO(17, '00');
+  CmdGPIO(18, '00');
+  CmdGPIO(19, '00');
+  CmdGPIO(20, '00');
+  CmdGPIO(21, '00');
+  CmdGPIO(22, '00');
+
+  var gpioStart = 1;
+  for (var i = gpioStart; i < 17; i++) {
+    CmdGPIO(i, '01');
+  }
+}
+
+// Exit gracefully when interrupted
+process.on("SIGINT", function () {
+  console.log("SIGINT: Quitting...");
+  clearInterval(intervalId);
+  iotivity.OCStop();
+  for (var key in childProcessContainer) {
+    console.log("Deleting: " + key);
+    for (var eachInList in childProcessContainer[key]) {
+      console.log(eachInList);
+      childProcessContainer[key][eachInList].kill('SIGINT');
+    }
+  }
+  //iotivity.OCStop();
+
+  // Exit
+  process.exit(0);
+});
+
+process.on('uncaughtException', (err) => {
+  console.log("Handled Error: process: ");
+  console.log(err.stack);
+});
+
+var log_file = fs.createWriteStream(__dirname + '/debug.log', { flags: 'w' });
+var log_stdout = process.stdout;
+
+console.log = function (d) { //
+  log_file.write(util.format(d) + '\n');
+  log_stdout.write(util.format(d) + '\n');
+};

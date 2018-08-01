@@ -1,0 +1,10 @@
+Install pyserial using the command "pip install pyserial"
+If the pip is not installed then
+in Linux - sudo apt-get install python-pip
+
+Run the Test.py as below
+sudo python Test.py 19 01
+
+Where byte 1 - 19 - is the GPIO pin number
+next byte 01 - value of the pin - on/off
+Note for relay pins 17 to 22 it is reversed where 0 is on and 1 is off

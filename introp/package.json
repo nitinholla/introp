@@ -1,0 +1,27 @@
+{
+  "name": "GRL-interop-board",
+  "version": "1.0.0",
+  "description": "interop-board",
+  "main": "html-server.js",
+  "scripts": {
+    "test": "node iot-node-server.js"
+  },
+  "engine-strict": true,
+  "engines": {
+    "node": "~7.10.1"
+  },
+  "author": "GRL",
+  "license": "ISC",
+  "dependencies": {
+    "connect": "^3.6.5",
+    "firmata": "^0.19.1",
+    "python-shell": "^0.4.0",
+    "request": "^2.87.0",
+    "serial": "~0.0.9",
+    "serialport": "~6.2.0",
+    "serve-static": "~1.13.1"
+  },
+  "__devDependencies": {
+    "iotivity-node": "git+https://github.com/intel/iotivity-node/#cdc9cc88e3d1a8f907cd34576f64588e6ec9e3dc"
+  }
+}

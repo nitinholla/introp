@@ -1,0 +1,56 @@
+<!DOCTYPE html">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script src="js/jquery.js"></script>
+  <title>Select Mode - Interop Board</title>
+  <style>
+  a{
+    padding: 10%;
+  }
+  div{
+    margin-top: -3%;
+
+  }
+
+  body{
+    height: 97%;
+    background: linear-gradient(to left, #a9e4f7 0%,#0fb4e7 100%);
+    user-select: none;
+    -moz-user-select: none;
+    overflow: hidden;
+  }
+  figure{
+    display : table-header-group;
+
+  }
+  figure img{
+    filter: drop-shadow(5px 5px 5px #0000004d);
+  }
+  </style>
+  <script>
+  function shutdown(){
+    $.ajax({
+      url: "http://127.0.0.1:8081/shutdown",
+      crossDomain: true,
+      type: "POST",
+      success: function(data, status){
+        console.log('success',data)
+      },
+      error: function(xhr, text_status){
+        console.log(xhr, text_status)
+      },
+    });
+  }
+  </script>
+
+</head>
+<body style="text-align:center">
+  <img src="img/ocf_trans.png" style="position: relative; height: 18%; top: -6px; z-index:-1" >
+  <h2 style="color:#fff; font-family: monospace;text-decoration-style: dashed;text-transform: uppercase;" ondblclick="shutdown();"> Select Mode </h2>
+  <div style="width: 1100px; margin-left: auto; margin-right: auto; margin-top: 4%;">
+    <a href="server_index.html"><figure><img border="0" alt="Server" src="img/server icon on.png" width="150" height="150"><figcaption>Server</figcaption></figure></a>
+    <a href="client_index.html"><figure><img border="0" alt="Clinet" src="img/client icon.png" width="150" height="150"><figcaption>Client</figcaption></figure></a>
+    <a href="server_index.html"><figure><img border="0" alt="Server and clinet" src="img/server and client.png" width="150" height="150"><figcaption>Server and Client</figcaption></figure></a></div>
+  </body>
+  </html>
